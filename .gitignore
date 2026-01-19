@@ -1,0 +1,7 @@
+# Build outputs
+/build/
+
+# Editor files
+.vscode/
+*.swp
+*.swo
