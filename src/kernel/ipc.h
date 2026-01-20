@@ -3,8 +3,11 @@
 
 #include "../include/kernel.h"
 
-// IPC function prototypes (stubs)
-int ipc_send(uint32_t dst, const msg_t *m);
-int ipc_recv(uint32_t *src, msg_t *m);
+// UNIX domain socket path used for IPC (WSL / Linux)
+#define IPC_SOCKET_PATH "/tmp/microkernel_ipc.sock"
+
+// IPC function prototypes
+int ipc_server_start(void);
+int ipc_server_stop(void);
 
 #endif // IPC_H

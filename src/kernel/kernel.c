@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <unistd.h>
 #include "../include/kernel.h"
 #include "ipc.h"
 
@@ -12,6 +13,16 @@ void kernel_poll(void) {
 
 int main(void) {
     kernel_init();
-    printf("[kernel] running stub; not a real kernel.\n");
+    if (ipc_server_start() == 0) {
+        printf("[kernel] IPC server started at %s\n", IPC_SOCKET_PATH);
+    } else {
+        fprintf(stderr, "[kernel] failed to start IPC server\n");
+    }
+    printf("[kernel] running stub; press Ctrl+C to exit.\n");
+    // simple loop to keep process alive
+    while (1) {
+        pause();
+    }
+    ipc_server_stop();
     return 0;
 }
