@@ -22,3 +22,16 @@ make
 ```
 
 This creates simple binaries in `build/` (stubs only). See `docs/requirements.md` for project requirements.
+
+Web GUI
+
+There is a minimal web GUI that runs in WSL without external dependencies. Start the kernel and then the GUI server:
+
+```bash
+make kernel
+./build/kernel > /tmp/kernel.log 2>&1 &
+python3 src/gui/server.py &
+# then open http://localhost:8000/ in your browser
+```
+
+Use the GUI to run IPC round-trip benchmarks and view results.
