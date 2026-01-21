@@ -23,14 +23,14 @@ static void run_service(int fd) {
         uint32_t reply_len = (uint32_t)strlen(response);
         msg_t reply = { MK_SERVICE_NET, header.src, MK_NET_CMD_PING, reply_len };
         if (send(fd, &reply, sizeof(reply), 0) != sizeof(reply)) { free(payload); break; }
-        send(fd, response, reply_len, 0);
+        if (send(fd, response, reply_len, 0) != (ssize_t)reply_len) { free(payload); break; }
         free(payload);
     }
 }
 
 int main(void) {
     printf("[net_service] started\n");
-    int fd = ipc_register_service(MK_SERVICE_NET, "net");
+    int fd = ipc_register_service(MK_SERVICE_NET);
     if (fd < 0) {
         fprintf(stderr, "[net_service] failed to register\n");
         return 1;

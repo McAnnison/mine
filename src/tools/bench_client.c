@@ -19,7 +19,7 @@ static int connect_ipc(void) {
     int fd = socket(AF_UNIX, SOCK_STREAM, 0);
     if (fd < 0) { perror("socket"); return -1; }
     struct sockaddr_un addr;
-    memset(&addr,0,sizeof(addr));
+    memset(&addr, 0, sizeof(addr));
     addr.sun_family = AF_UNIX;
     strncpy(addr.sun_path, socket_path, sizeof(addr.sun_path)-1);
     if (connect(fd, (struct sockaddr*)&addr, sizeof(addr)) < 0) { perror("connect"); close(fd); return -1; }
@@ -45,10 +45,12 @@ static int send_request(uint32_t dst, uint32_t type, const void *payload, uint32
         return 1;
     }
     if (reply.len) {
-        char buffer[256] = {0};
-        uint32_t read_len = reply.len < sizeof(buffer) - 1 ? reply.len : sizeof(buffer) - 1;
-        if (recv(fd, buffer, read_len, MSG_WAITALL) != (ssize_t)read_len) { perror("recv payload"); close(fd); return 1; }
+        if (reply.len > MK_MAX_PAYLOAD) { fprintf(stderr, "reply too large\n"); close(fd); return 1; }
+        char *buffer = calloc(reply.len + 1, 1);
+        if (!buffer) { fprintf(stderr, "alloc failed\n"); close(fd); return 1; }
+        if (recv(fd, buffer, reply.len, MSG_WAITALL) != (ssize_t)reply.len) { perror("recv payload"); free(buffer); close(fd); return 1; }
         printf("reply: %s\n", buffer);
+        free(buffer);
     }
     close(fd);
     return 0;
@@ -99,7 +101,7 @@ int main(int argc, char **argv) {
         uint64_t end = now_ns();
         double avg_ns = (double)(end - start) / iterations;
         printf("iterations=%d avg monolithic call = %.1f us\n", iterations, avg_ns/1000.0);
-        return accumulator == 0 ? 1 : 0;
+        return 0;
     }
 
     if (strcmp(argv[1], "console") == 0) {

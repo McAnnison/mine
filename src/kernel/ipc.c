@@ -29,6 +29,7 @@ static void register_entry(connection_entry_t *registry, int max, uint32_t id, i
     if (id == MK_SERVICE_KERNEL) {
         return;
     }
+    int inserted = 0;
     pthread_mutex_lock(&registry_lock);
     for (int i = 0; i < max; i++) {
         if (registry[i].id == 0 || registry[i].id == id) {
@@ -37,10 +38,14 @@ static void register_entry(connection_entry_t *registry, int max, uint32_t id, i
             if (name_prefix) {
                 snprintf(registry[i].name, sizeof(registry[i].name), "%s%u", name_prefix, id);
             }
+            inserted = 1;
             break;
         }
     }
     pthread_mutex_unlock(&registry_lock);
+    if (!inserted) {
+        fprintf(stderr, "[kernel] registry full for id %u\n", id);
+    }
 }
 
 static int lookup_entry(connection_entry_t *registry, int max, uint32_t id) {
@@ -56,8 +61,8 @@ static int lookup_entry(connection_entry_t *registry, int max, uint32_t id) {
     return target_fd;
 }
 
-static void register_service(uint32_t id, int fd, const char *name_prefix) {
-    register_entry(service_registry, MAX_SERVICES, id, fd, name_prefix);
+static void register_service(uint32_t id, int fd) {
+    register_entry(service_registry, MAX_SERVICES, id, fd, "svc-");
 }
 
 static void register_client(uint32_t id, int fd) {
@@ -73,7 +78,7 @@ static int lookup_client(uint32_t id) {
 }
 
 static int is_service_id(uint32_t id) {
-    return id == MK_SERVICE_CONSOLE || id == MK_SERVICE_FS || id == MK_SERVICE_NET;
+    return id >= MK_SERVICE_CONSOLE && id <= MK_SERVICE_NET;
 }
 
 static void *client_thread_fn(void *arg) {
@@ -96,10 +101,13 @@ static void *client_thread_fn(void *arg) {
         }
         if (header.dst == MK_SERVICE_KERNEL && header.type == MK_CMD_REGISTER) {
             service_id = header.src;
-            register_service(service_id, client, "svc-");
+            register_service(service_id, client);
 
             msg_t reply = { MK_SERVICE_KERNEL, service_id, MK_CMD_REGISTER, 0 };
-            send(client, &reply, sizeof(reply), 0);
+            if (send(client, &reply, sizeof(reply), 0) != sizeof(reply)) {
+                free(payload);
+                break;
+            }
         } else {
             if (service_id == 0) {
                 register_client(header.src, client);
@@ -107,11 +115,19 @@ static void *client_thread_fn(void *arg) {
             int target_fd = is_service_id(header.dst) ? lookup_service(header.dst) : lookup_client(header.dst);
             if (target_fd < 0) {
                 msg_t reply = { MK_SERVICE_KERNEL, header.src, MK_CMD_ERROR, 0 };
-                send(client, &reply, sizeof(reply), 0);
+                if (send(client, &reply, sizeof(reply), 0) != sizeof(reply)) {
+                    free(payload);
+                    break;
+                }
             } else {
-                if (send(target_fd, &header, sizeof(header), 0) == sizeof(header)) {
-                    if (len) {
-                        send(target_fd, payload, len, 0);
+                if (send(target_fd, &header, sizeof(header), 0) != sizeof(header)) {
+                    free(payload);
+                    break;
+                }
+                if (len) {
+                    if (send(target_fd, payload, len, 0) != (ssize_t)len) {
+                        free(payload);
+                        break;
                     }
                 }
             }
@@ -191,8 +207,7 @@ int ipc_server_stop(void) {
     return 0;
 }
 
-int ipc_register_service(uint32_t service_id, const char *name) {
-    (void)name;
+int ipc_register_service(uint32_t service_id) {
     int fd = socket(AF_UNIX, SOCK_STREAM, 0);
     if (fd < 0) return -1;
     struct sockaddr_un addr;
@@ -217,6 +232,5 @@ int ipc_register_service(uint32_t service_id, const char *name) {
         close(fd);
         return -1;
     }
-    register_service(service_id, fd, "svc-");
     return fd;
 }

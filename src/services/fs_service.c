@@ -25,14 +25,14 @@ static void run_service(int fd) {
         uint32_t reply_len = (uint32_t)strlen(reply_text);
         msg_t reply = { MK_SERVICE_FS, header.src, MK_FS_CMD_READ, reply_len };
         if (send(fd, &reply, sizeof(reply), 0) != sizeof(reply)) { free(filename); break; }
-        send(fd, reply_text, reply_len, 0);
+        if (send(fd, reply_text, reply_len, 0) != (ssize_t)reply_len) { free(filename); break; }
         free(filename);
     }
 }
 
 int main(void) {
     printf("[fs_service] started\n");
-    int fd = ipc_register_service(MK_SERVICE_FS, "fs");
+    int fd = ipc_register_service(MK_SERVICE_FS);
     if (fd < 0) {
         fprintf(stderr, "[fs_service] failed to register\n");
         return 1;
