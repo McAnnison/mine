@@ -54,7 +54,7 @@ kill <console_service_pid>
 
 Web GUI
 
-There is a minimal web GUI that runs in WSL without external dependencies. Start the kernel and then the GUI server:
+There is a minimal web GUI that runs in WSL without external dependencies. It now includes a styled layout with connection status. Start the kernel and then the GUI server:
 
 ```bash
 make kernel
@@ -64,3 +64,5 @@ python3 src/gui/server.py &
 ```
 
 Use the GUI to run IPC round-trip benchmarks and view results. Ensure the kernel and console service are running first.
+
+![GUI screenshot](docs/gui-screenshot.png)
