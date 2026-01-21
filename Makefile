@@ -17,9 +17,9 @@ kernel:
 
 services:
 	mkdir -p build
-	$(CC) $(CFLAGS) -o build/console_service src/services/console_service.c
-	$(CC) $(CFLAGS) -o build/fs_service src/services/fs_service.c
-	$(CC) $(CFLAGS) -o build/net_service src/services/net_service.c
+	$(CC) $(CFLAGS) -o build/console_service src/services/console_service.c $(KERNEL_OBJ) $(LDFLAGS)
+	$(CC) $(CFLAGS) -o build/fs_service src/services/fs_service.c $(KERNEL_OBJ) $(LDFLAGS)
+	$(CC) $(CFLAGS) -o build/net_service src/services/net_service.c $(KERNEL_OBJ) $(LDFLAGS)
 
 tools:
 	mkdir -p build

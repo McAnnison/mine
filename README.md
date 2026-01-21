@@ -1,8 +1,8 @@
-Microkernel OS — Project Skeleton
+Microkernel OS — Minimal Simulation
 
 Project Description
 
-Design and implement a microkernel-based operating system with minimal kernel functionality and user-space services.
+Design and implement a microkernel-based operating system with minimal kernel functionality and user-space services. This repo provides a working IPC router (the "kernel") plus three user-space services to demonstrate microkernel separation, message passing, fault isolation, and IPC overhead.
 
 Structure
 
@@ -15,13 +15,42 @@ Structure
 
 Quick start
 
-To build the skeleton (requires a C toolchain):
+To build the kernel, services, and CLI tools (requires a C toolchain):
 
 ```sh
 make
+make tools
 ```
 
-This creates simple binaries in `build/` (stubs only). See `docs/requirements.md` for project requirements.
+This creates binaries in `build/`. See `docs/requirements.md` for project requirements.
+
+Run the microkernel + services:
+
+```sh
+./build/kernel > /tmp/kernel.log 2>&1 &
+./build/console_service > /tmp/console.log 2>&1 &
+./build/fs_service > /tmp/fs.log 2>&1 &
+./build/net_service > /tmp/net.log 2>&1 &
+```
+
+Use the CLI to send IPC requests or benchmark:
+
+```sh
+./build/bench_client console "hello"
+./build/bench_client fs "readme.txt"
+./build/bench_client net "ping"
+./build/bench_client bench 1000
+./build/bench_client monolithic 1000
+```
+
+Fault isolation demo:
+
+```sh
+kill <console_service_pid>
+./build/bench_client console "hello"  # reports kernel error
+./build/bench_client fs "readme.txt"  # still works
+./build/console_service &
+```
 
 Web GUI
 
@@ -34,4 +63,4 @@ python3 src/gui/server.py &
 # then open http://localhost:8000/ in your browser
 ```
 
-Use the GUI to run IPC round-trip benchmarks and view results.
+Use the GUI to run IPC round-trip benchmarks and view results. Ensure the kernel and console service are running first.

@@ -47,7 +47,7 @@ HTML = b"""
 
 def ipc_roundtrip(fd, payload_value):
     # header: 4 uint32 fields
-    hdr = (1).to_bytes(4, 'little') + (2).to_bytes(4, 'little') + (0x10).to_bytes(4, 'little') + (8).to_bytes(4, 'little')
+    hdr = (100).to_bytes(4, 'little') + (1).to_bytes(4, 'little') + (0x10).to_bytes(4, 'little') + (8).to_bytes(4, 'little')
     payload = int(payload_value).to_bytes(8, 'little')
     fd.sendall(hdr)
     fd.sendall(payload)
