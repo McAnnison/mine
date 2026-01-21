@@ -4,11 +4,11 @@
 #include "ipc.h"
 
 void kernel_init(void) {
-    printf("[kernel] init (skeleton)\n");
+    printf("[kernel] init (minimal microkernel)\n");
 }
 
 void kernel_poll(void) {
-    // In a real microkernel this would handle scheduling and message routing.
+    // IPC routing handled inside ipc.c server threads.
 }
 
 int main(void) {
@@ -18,7 +18,7 @@ int main(void) {
     } else {
         fprintf(stderr, "[kernel] failed to start IPC server\n");
     }
-    printf("[kernel] running stub; press Ctrl+C to exit.\n");
+    printf("[kernel] running; press Ctrl+C to exit.\n");
     // simple loop to keep process alive
     while (1) {
         pause();

@@ -1,7 +1,41 @@
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <sys/socket.h>
+#include "../kernel/ipc.h"
+
+static void run_service(int fd) {
+    while (1) {
+        msg_t header;
+        ssize_t r = recv(fd, &header, sizeof(header), MSG_WAITALL);
+        if (r <= 0) break;
+        uint32_t len = header.len;
+        if (len > MK_MAX_PAYLOAD) break;
+        char *payload = NULL;
+        if (len) {
+            payload = calloc(len + 1, 1);
+            if (!payload) break;
+            if (recv(fd, payload, len, MSG_WAITALL) <= 0) { free(payload); break; }
+        }
+        printf("[net_service] ping from %u: %s\n", header.src, payload ? payload : "(empty)");
+        const char *response = "pong";
+        uint32_t reply_len = (uint32_t)strlen(response);
+        msg_t reply = { MK_SERVICE_NET, header.src, MK_NET_CMD_PING, reply_len };
+        if (send(fd, &reply, sizeof(reply), 0) != sizeof(reply)) { free(payload); break; }
+        if (send(fd, response, reply_len, 0) != (ssize_t)reply_len) { free(payload); break; }
+        free(payload);
+    }
+}
 
 int main(void) {
-    printf("[net_service] started (stub)\n");
-    // Network service stub
+    printf("[net_service] started\n");
+    int fd = ipc_register_service(MK_SERVICE_NET);
+    if (fd < 0) {
+        fprintf(stderr, "[net_service] failed to register\n");
+        return 1;
+    }
+    run_service(fd);
+    close(fd);
     return 0;
 }

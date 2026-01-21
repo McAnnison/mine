@@ -9,5 +9,6 @@
 // IPC function prototypes
 int ipc_server_start(void);
 int ipc_server_stop(void);
+int ipc_register_service(uint32_t service_id);
 
 #endif // IPC_H
